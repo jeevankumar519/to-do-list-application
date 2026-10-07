@@ -35,6 +35,14 @@ header p {
     color: #777;
 }
 
+.storage-notice {
+    padding: 10px 14px;
+    border-radius: 8px;
+    background: #fff4d6;
+    color: #775b12;
+    font-size: 14px;
+}
+
 .task-input {
     display: grid;
     grid-template-columns: 1.5fr 180px 180px 180px;

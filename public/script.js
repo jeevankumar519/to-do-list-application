@@ -16,11 +16,22 @@ const completedTasks = document.getElementById("completedTasks");
 
 const emptyMessage = document.getElementById("emptyMessage");
 const clearCompleted = document.getElementById("clearCompleted");
+const storageNotice = document.getElementById("storageNotice");
 
 let tasks = [];
 let currentFilter = "all";
+const isGitHubPages = window.location.hostname.endsWith(".github.io");
+const localTasksKey = "onlineTodoTasks";
 
 addBtn.addEventListener("click", addTask);
+
+if (isGitHubPages) {
+  storageNotice.hidden = false;
+  storageNotice.textContent = "GitHub Pages mode: tasks are saved only in this browser. Email reminders and syncing are unavailable.";
+  reminderType.value = "message";
+  reminderType.querySelector('option[value="email"]').disabled = true;
+  contact.closest("label").hidden = true;
+}
 
 taskInput.addEventListener("keypress", function (event) {
   if (event.key === "Enter") {
@@ -44,6 +55,30 @@ async function addTask() {
 
   if (!title) {
     alert("Please enter a task.");
+    return;
+  }
+
+  if (isGitHubPages) {
+    try {
+      tasks.unshift({
+        _id: crypto.randomUUID(),
+        title,
+        priority: priority.value,
+        dueDate: dueDate.value || null,
+        dueTime: dueTime.value || null,
+        reminderMinutes: Number(reminderMinutes.value) || 15,
+        reminderType: "message",
+        contact: "",
+        completed: false,
+        reminderSent: false,
+        createdAt: new Date().toISOString(),
+      });
+      saveLocalTasks();
+      resetTaskForm();
+      displayTasks();
+    } catch (error) {
+      alert(`Could not save task in this browser: ${error.message}`);
+    }
     return;
   }
 
@@ -75,23 +110,46 @@ async function addTask() {
       throw new Error(data.message || "Failed to create task");
     }
 
-    taskInput.value = "";
-    dueDate.value = "";
-    dueTime.value = "";
-    priority.value = "Medium";
-    reminderMinutes.value = "15";
-    reminderType.value = "email";
-    contact.value = "";
-    contact.placeholder = "Enter email address";
-    contact.setAttribute("type", "email");
-
+    resetTaskForm();
     await loadTasks();
   } catch (error) {
     alert(error.message);
   }
 }
 
+function resetTaskForm() {
+  taskInput.value = "";
+  dueDate.value = "";
+  dueTime.value = "";
+  priority.value = "Medium";
+  reminderMinutes.value = "15";
+  reminderType.value = isGitHubPages ? "message" : "email";
+  contact.value = "";
+  contact.placeholder = "Enter email address";
+  contact.setAttribute("type", "email");
+}
+
+function saveLocalTasks() {
+  window.localStorage.setItem(localTasksKey, JSON.stringify(tasks));
+}
+
 async function loadTasks() {
+  if (isGitHubPages) {
+    try {
+      const storedTasks = window.localStorage.getItem(localTasksKey);
+      tasks = storedTasks ? JSON.parse(storedTasks) : [];
+      if (!Array.isArray(tasks)) {
+        throw new Error("Saved task data is invalid.");
+      }
+      displayTasks();
+      checkBrowserNotifications();
+    } catch (error) {
+      storageNotice.textContent = `Could not load tasks saved in this browser: ${error.message}`;
+      console.error("Failed to load locally saved tasks:", error);
+    }
+    return;
+  }
+
   try {
     const response = await fetch("/api/tasks");
     const data = await response.json();
@@ -167,6 +225,19 @@ function displayTasks() {
 }
 
 async function toggleTask(id) {
+  if (isGitHubPages) {
+    tasks = tasks.map((task) =>
+      task._id === id ? { ...task, completed: !task.completed } : task
+    );
+    try {
+      saveLocalTasks();
+      displayTasks();
+    } catch (error) {
+      alert(`Could not save task changes in this browser: ${error.message}`);
+    }
+    return;
+  }
+
   try {
     const response = await fetch(`/api/tasks/${id}/toggle`, {
       method: "PATCH",
@@ -185,6 +256,17 @@ async function toggleTask(id) {
 }
 
 async function deleteTask(id) {
+  if (isGitHubPages) {
+    tasks = tasks.filter((task) => task._id !== id);
+    try {
+      saveLocalTasks();
+      displayTasks();
+    } catch (error) {
+      alert(`Could not save task changes in this browser: ${error.message}`);
+    }
+    return;
+  }
+
   try {
     const response = await fetch(`/api/tasks/${id}`, {
       method: "DELETE",
@@ -203,6 +285,17 @@ async function deleteTask(id) {
 }
 
 clearCompleted.addEventListener("click", async function () {
+  if (isGitHubPages) {
+    tasks = tasks.filter((task) => !task.completed);
+    try {
+      saveLocalTasks();
+      displayTasks();
+    } catch (error) {
+      alert(`Could not save task changes in this browser: ${error.message}`);
+    }
+    return;
+  }
+
   try {
     const response = await fetch("/api/tasks", {
       method: "DELETE",
@@ -316,7 +409,12 @@ async function showBrowserReminder(task) {
   }, 5000);
 
   try {
-    await fetch(`/api/tasks/${task._id}/reminder`, { method: "PATCH" });
+    if (isGitHubPages) {
+      task.reminderSent = true;
+      saveLocalTasks();
+    } else {
+      await fetch(`/api/tasks/${task._id}/reminder`, { method: "PATCH" });
+    }
   } catch (error) {
     console.error("Failed to mark reminder sent:", error.message);
   }
