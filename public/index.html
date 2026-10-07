@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Online To-Do List</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <div class="container">
+
+        <header>
+            <h1>My To-Do List</h1>
+            <p>Organize your tasks, schedule reminders, and never miss a deadline.</p>
+        </header>
+
+        <section class="task-input">
+            <input type="text" id="taskInput" placeholder="Enter your task...">
+
+            <select id="priority">
+                <option value="Low">Low Priority</option>
+                <option value="Medium" selected>Medium Priority</option>
+                <option value="High">High Priority</option>
+            </select>
+
+            <input type="date" id="dueDate">
+            <input type="time" id="dueTime">
+        </section>
+
+        <div class="reminder-row">
+            <label>
+                Remind before
+                <select id="reminderMinutes">
+                    <option value="5">5 minutes</option>
+                    <option value="10">10 minutes</option>
+                    <option value="15" selected>15 minutes</option>
+                    <option value="30">30 minutes</option>
+                    <option value="60">1 hour</option>
+                    <option value="1440">1 day</option>
+                </select>
+            </label>
+
+            <label>
+                Notify through
+                <select id="reminderType">
+                    <option value="email" selected>Email</option>
+                    <option value="message">Browser message</option>
+                </select>
+            </label>
+
+            <label>
+                Contact email
+                <input type="text" id="contact" placeholder="Enter email address">
+            </label>
+        </div>
+
+        <div class="add-button-row">
+            <button id="addBtn">Add Task</button>
+        </div>
+
+        <div class="search-box">
+            <input type="text" id="searchInput" placeholder="Search tasks...">
+        </div>
+
+        <div class="stats">
+            <div class="stat">
+                <h3 id="totalTasks">0</h3>
+                <p>Total</p>
+            </div>
+
+            <div class="stat">
+                <h3 id="activeTasks">0</h3>
+                <p>Active</p>
+            </div>
+
+            <div class="stat">
+                <h3 id="completedTasks">0</h3>
+                <p>Completed</p>
+            </div>
+        </div>
+
+        <div class="filters">
+            <button class="filter active" data-filter="all">All</button>
+            <button class="filter" data-filter="active">Active</button>
+            <button class="filter" data-filter="completed">Completed</button>
+            <button id="clearCompleted">Clear Completed</button>
+        </div>
+
+        <ul id="taskList"></ul>
+
+        <div id="emptyMessage" class="empty">
+            <h2>No tasks yet</h2>
+            <p>Add a task to get started!</p>
+        </div>
+
+    </div>
+
+    <script src="script.js"></script>
+
+</body>
+</html>

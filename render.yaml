@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: online-todo
+    runtime: node
+    plan: free
+    buildCommand: npm ci
+    startCommand: npm start
+    envVars:
+      - key: MONGO_URI
+        sync: false
